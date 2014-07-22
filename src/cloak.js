@@ -203,26 +203,23 @@ define(function(require, exports) {
             destroy: function() {}
         });
 
-        // 扩展父类的静态方法，旨在规范集成
-        extend(Base, {
-            /**
-             * 给类的原型链扩展字段或者方法
-             *
-             * @public
-             * @param {string} type 事件类型
-             * @param {array|function|undefined}
-             * @param {function} success the callback function
-             */
-            include: function(object) {
-                for (var k in object) {
-                    if (k == 'attribute') {
-                        throw 'cannot overwrite `attribute()` function.';
-                    }
-                    Base.prototype[k] = object[k];
+        /**
+         * 给类的原型链扩展字段或者方法
+         *
+         * @public
+         * @param {string} type 事件类型
+         * @param {array|function|undefined}
+         * @param {function} success the callback function
+         */
+        Base.include = function(object) {
+            for (var k in object) {
+                if (k == 'attribute') {
+                    throw 'cannot overwrite `attribute()` function.';
                 }
-                return this;
+                Base.prototype[k] = object[k];
             }
-        });
+            return this;
+        }
 
         if (isObject(property)) {
             Base.include(property);
@@ -455,7 +452,7 @@ define(function(require, exports) {
         var config = null;
         if (isArray(eventList) && eventList.length) {
             // 如果是原生事件对象，也就是配置事件时候的格式
-            while (config = eventList.pop()) {  // jshint ignore:line
+            while (config = eventList.pop()) { // jshint ignore:line
                 if (config && typeof config.callback == 'function') {
                     config.callback();
                 }
