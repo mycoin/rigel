@@ -81,23 +81,21 @@ define(function(require, exports) {
      * @return {Function}
      */
     function Class(property) {
-
         var Base = function() {
             // 用静态方法去验证参数传递是否合法
             if (typeof Base.auth == 'function') {
                 Base.auth.apply(this, arguments);
             }
-            this.attribute('event', {}); // 创建事件缓存对象
-        };
+
+            // 创建事件缓存对象
+            this.attribute('event', {});
+        }
 
         // 缓存对象，用于在闭包里面存储私有属性
         var cache = {};
 
         // 添加自定义事件，基于事件驱动
         extend(Base.prototype, {
-
-            // 构造函数
-            init: function() {},
 
             // 设置属性
             attribute: function(k, value) {
@@ -135,15 +133,15 @@ define(function(require, exports) {
              * @param {string} type 消息名称
              * @param {array} argv 参数队列
              */
-            trigger: function(message, argv, context) {
+            notify: function(message, argv) {
                 var eve = this.attribute('event');
                 var item;
                 if (eve[message]) {
                     for (var i = 0; i < eve[message].length; i++) {
                         item = eve[message][i] || {};
                         if (item.listenner) {
-                            // @todo 需要添加try...catch嘛？防止干扰正常事件的分发
-                            item.listenner.apply(context || item.context, argv);
+                            // @todo防止干扰其他的分发
+                            item.listenner.apply(item.context, argv);
                         }
                     }
                 }
@@ -174,10 +172,13 @@ define(function(require, exports) {
                         if (arguments.length == 1 && message == k) {
                             // 解绑某一个类型的事件，不需要在循环
                             delete eve[k];
+                            break;
                         } else {
                             // 已经注册的事件
                             for (var i = 0, length = event.length; i < length; i += 1) {
-                                if (!isObject(event[i])) break;
+                                if (!isObject(event[i])) {
+                                    break;
+                                }
                                 if (event[i].id == message || message == event[i].listenner || (k == message && listenner == event[i].listenner)) {
                                     event.splice(i, 1);
                                 }
@@ -188,7 +189,6 @@ define(function(require, exports) {
                     // 解绑所有的事件
                     this.attribute('event', {});
                 }
-
                 return this;
             },
 
@@ -211,10 +211,10 @@ define(function(require, exports) {
          * @param {array|function|undefined}
          * @param {function} success the callback function
          */
-        Base.include = function(object) {
+        Base.extend = function(object) {
             for (var k in object) {
-                if (k == 'attribute') {
-                    throw 'cannot overwrite `attribute()` function.';
+                if (k == 'attribute' || k == 'bind' || k == 'unbind') {
+                    throw 'cannot overwrite `attribute/bind/unbind` function.';
                 }
                 Base.prototype[k] = object[k];
             }
@@ -222,12 +222,12 @@ define(function(require, exports) {
         }
 
         if (isObject(property)) {
-            Base.include(property);
+            Base.extend(property);
         }
         return Base;
     }
 
-    // 视图模块，视图注意提供模板引擎，批量绑定事件，trigger事件
+    // 视图模块，视图注意提供模板引擎，批量绑定事件，notice事件
     var View = new Class({
         /**
          * 视图初始化函数
@@ -261,6 +261,7 @@ define(function(require, exports) {
 
             var ready = function() {
                 // 绑定配置的事件
+                // debugger
                 var handle = View.bindEvent(opt.event, me, opt.main);
 
                 // 不知道还有没有在DOM ready之后干得事儿
@@ -451,9 +452,10 @@ define(function(require, exports) {
     View.unbindEvent = function(eventList) {
         var config = null;
         if (isArray(eventList) && eventList.length) {
-            // 如果是原生事件对象，也就是配置事件时候的格式
             while (config = eventList.pop()) { // jshint ignore:line
                 if (config && typeof config.callback == 'function') {
+
+                    // 绑定事件的时候返回的是解绑函数
                     config.callback();
                 }
             }
@@ -490,7 +492,7 @@ define(function(require, exports) {
          * @public
          * @param {object} opt 基本配置项
          * @param {object=} opt.param 异步请求的参数
-         * @param {object=} opt.ajax 异步请求地址
+         * @param {object=} opt.config 业务需要使用到的常量等等
          * @param {object} opt.data 页面默认缓存数据
          
          * @param {function} success the callback function
@@ -503,6 +505,9 @@ define(function(require, exports) {
 
             // 开辟一片用于异步请求参数管理的区块
             this.attribute('param', {});
+
+            // 配置基本的属性
+            this.config(opt.config);
 
             // 注入默认的数据到Model里面
             me.setData(opt.data);
@@ -528,8 +533,12 @@ define(function(require, exports) {
         },
 
         // 配置基本的属性，例如异步请求的地址等等
-        config: function() {
-            throw 'unavailable.';
+        config: function(key) {
+            if (isObject(key)) {
+                extend(this.config, key, true);
+            } else {
+                return this.config[key];
+            }
         },
 
         /**
@@ -641,7 +650,7 @@ define(function(require, exports) {
          * @param {function=} callback 异步请求完成的回调函数，先触发 onrequest 事件
          * @return
          */
-        request: function(key, extendParam, callback) {
+        request: function(key, extendParam, success, failed) {
             var param = {};
             var me = this;
 
@@ -651,9 +660,7 @@ define(function(require, exports) {
                 param = this.param();
             }
 
-            if (isObject(this.ajaxMap)) {
-                key = this.ajaxMap[key] || key;
-            }
+            key = this.config('' + key) || key;
 
             // 断言地址是否合法
             assert(key && typeof key == 'string');
@@ -662,13 +669,22 @@ define(function(require, exports) {
             Model.ajax(key, param, function(result, request, XHR) {
 
                 // 通知函数，可能大部分使用request发起的请求对不用回调函数，直接绑定request即可
-                me.trigger('request', [result, request, XHR], me);
+                me.notify('request', [result, request, XHR], me);
 
                 // 回调函数
-                if (typeof callback == 'function') {
-                    callback.call(me, result, request, XHR);
+                if (typeof success == 'function') {
+                    success.call(me, result, request, XHR);
+                }
+            }, function(status, statusText, xhr) {
+                // 发布异步请求失败的消息
+                me.notify('error', arguments);
+
+                // 回调失败函数
+                if (typeof failed == 'function') {
+                    failed.call(me, result, request, XHR);
                 }
             });
+
             return this;
         },
         /**
@@ -734,6 +750,8 @@ define(function(require, exports) {
             error: function(XHR, textStatus, errorThrown) {
                 if (typeof failed == 'function') {
                     failed(XHR.status, XHR.statusText, XHR);
+                } else {
+                    throw errorThrown;
                 }
             },
             success: function(result, textStatus, XHR) {
