@@ -923,10 +923,11 @@ define(function(require, exports) { // jshint ignore:line
         // 使用闭包创建回调函数
         var create = function (callback) {
             return function() {
-                callback.apply(controller, arguments);
+                callback.apply(controller, arguments); // 上下文为控制器
             };
         };
 
+        // Action绑定事件的只支持View，Model
         for (var name in eventMap) {
             var result = regx.exec(name);
             if (result && result[2]) {
@@ -934,6 +935,7 @@ define(function(require, exports) { // jshint ignore:line
                 context = controller[result[1]];
                 context.bind(type, create(eventMap[name]));
             }
+            // @todo 性能考虑
         }
     };
 
