@@ -239,7 +239,7 @@ define(function(require, exports) { // jshint ignore:line
          * @param {object} object 待扩展的原型
          * @return this
          */
-        Base.extend = function(object) {
+        Base.extend = function (object) {
             for (var name in object) {
 
                 // 几个不能被复写的函数
@@ -284,19 +284,19 @@ define(function(require, exports) { // jshint ignore:line
             me.setTemplate(String(opt.template) || '');
 
             // 转移init函数到用户自定义函数，同时传递上下文为me
-            me.init = function() {
+            me.init = function () {
                 if (typeof opt.init == 'function') {
                     // 注意这里的参数是控制器传递来的
                     opt.init.apply(me, arguments);
                 }
 
                 // 防止重复绑定
-                me.init = function() {};
+                me.init = function () {};
                 return me;
             };
 
             // @考虑提取出去
-            var ready = function() {
+            var ready = function () {
                 me.main = $(opt.main || 'body');
 
                 // 绑定配置的事件
@@ -398,7 +398,7 @@ define(function(require, exports) { // jshint ignore:line
      * @param {object=} context 事件回调函数上下文
      * @return 模板引擎实例
      */
-    View.initTemplate = function(tpl, context) {
+    View.initTemplate = function (tpl, context) {
         // 创建etpl实例
         var template = new this.Template.Engine({
             commandOpen: '<%',
@@ -429,7 +429,7 @@ define(function(require, exports) { // jshint ignore:line
      * @param {element=} root 跟节点DOM
      * @return {array} 解绑函数数组
      */
-    View.bindEvent = function(eventMap, context, root) {
+    View.bindEvent = function (eventMap, context, root) {
         root = $(root || document.body);
 
         // 已注册事件列表
@@ -511,7 +511,7 @@ define(function(require, exports) { // jshint ignore:line
      * @param {array} eventList 事件列表
      * @return null
      */
-    View.unbindEvent = function(eventList) {
+    View.unbindEvent = function (eventList) {
         var config = null;
         if (isArray(eventList)) {
             while (config = eventList.pop()) { // jshint ignore:line
@@ -531,7 +531,7 @@ define(function(require, exports) { // jshint ignore:line
      * @param {object} opt 用户定义的配置项
      * @return {object}
      */
-    View.create = function(opt) {
+    View.create = function (opt) {
         var view = new View(opt);
 
         view.init(opt);
@@ -581,14 +581,14 @@ define(function(require, exports) { // jshint ignore:line
             me.param(opt.param);
 
             // 挂载用户自定义函数
-            me.init = function() {
+            me.init = function () {
 
                 if (typeof opt.init == 'function') {
                     opt.init.apply(me, arguments);
                 }
 
                 // 执行完init应该销毁防止多次init导致事件重复
-                me.init = function() {};
+                me.init = function () {};
                 return me;
             };
 
@@ -755,7 +755,7 @@ define(function(require, exports) { // jshint ignore:line
      * @param {object} opt 用户定义的配置项
      * @return {object}
      */
-    Model.create = function(opt) {
+    Model.create = function (opt) {
         var model = new Model(opt);
 
         model.init(opt);
@@ -777,7 +777,7 @@ define(function(require, exports) { // jshint ignore:line
      * @param {*} value 用户定义的配置项
      * @return {object}
      */
-    Model.mixin = function(key, value) {
+    Model.mixin = function (key, value) {
         switch (arguments.length) {
             case 0:
                 return this;
@@ -803,7 +803,7 @@ define(function(require, exports) { // jshint ignore:line
      * @return {meta.Promise} 对应的`Promise`对象，数据加载完成后触发
      * @ignore
      */
-    Model.ajax = function(path, data, success, failed) {
+    Model.ajax = function (path, data, success, failed) {
         var token = getGuid();
 
         var headers = {
@@ -854,7 +854,7 @@ define(function(require, exports) { // jshint ignore:line
             Action.listenEmits(opt.event, me);
 
             // 挂载用户自定义函数
-            me.init = function() {
+            me.init = function () {
 
                 // 初始化模型，默认传递为 `datasource`
                 me.model.init(me.datasource);
@@ -867,7 +867,7 @@ define(function(require, exports) { // jshint ignore:line
                 }
 
                 // 执行完init应该销毁防止多次init导致事件重复
-                me.init = function() {};
+                me.init = function () {};
                 return me;
             };
 
@@ -893,7 +893,7 @@ define(function(require, exports) { // jshint ignore:line
      * @param {object} opt 用户定义的配置项
      * @return {object}
      */
-    Action.create = function(opt) {
+    Action.create = function (opt) {
         var action = new Action(opt);
 
         action.init(opt);
@@ -915,13 +915,13 @@ define(function(require, exports) { // jshint ignore:line
      * @param {Action} controller 控制器对象，要求View，Model已经初始化完成
      * @return this
      */
-    Action.listenEmits = function(eventMap, controller) {
+    Action.listenEmits = function (eventMap, controller) {
         var regx = /(view|model)\s*:\s*(\S*)/;
         var type;
         var context;
 
         // 使用闭包创建回调函数
-        var create = function(callback) {
+        var create = function (callback) {
             return function() {
                 callback.apply(controller, arguments);
             };
