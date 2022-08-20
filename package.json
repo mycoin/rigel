@@ -2,7 +2,9 @@
   "name": "rigel",
   "version": "0.0.2",
   "description": "rigel",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "typings": "typings/index.d.ts",
   "scripts": {
     "dev": "bundle-scripts dev",
     "build": "bundle-scripts build",
@@ -19,8 +21,8 @@
     "queue": "^6.0.2"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.10.3",
-    "@babel/register": "^7.14.5",
+    "@babel/preset-env": "^7.18.10",
+    "@babel/register": "^7.18.9",
     "babel-eslint": "^10.1.0",
     "bundle-scripts": "^0.3.x",
     "chai": "^4.2.0",
